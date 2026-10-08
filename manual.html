@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>풋살 팀 밸런서 사용자 설명서</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f7a4d'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='white' stroke-width='2.5'/%3E%3Cpath d='M16 11l4 3-1.5 5h-5L12 14z' fill='white'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f4f6f4; --surface: #fff; --surface2: #eef2ee; --text: #1b1f1c; --muted: #5f6b63;
+  --primary: #1f7a4d; --primary-weak: #d9efe3; --border: #d7ded9; --danger: #c0392b; --warn: #b26a00;
+  --teamA: #2563eb; --teamB: #dc2626; --teamC: #d97706;
+}
+@media screen and (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111513; --surface: #1a201c; --surface2: #222a25; --text: #e7ece8; --muted: #9aa79f;
+    --primary: #4cc38a; --primary-weak: #1d3a2b; --border: #2f3933; --danger: #ff6b5e; --warn: #f0a940;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Noto Sans KR", "Nanum Gothic", system-ui, sans-serif;
+  font-size: 15px; line-height: 1.7; word-break: keep-all;
+}
+a { color: var(--primary); }
+
+/* 화면 전용 상단 막대 */
+.bar {
+  position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 24px; background: #1f7a4d; color: #fff;
+}
+.bar strong { font-size: 16px; margin-right: auto; }
+.bar a {
+  color: #fff; text-decoration: none; padding: 6px 14px; border-radius: 999px;
+  background: rgba(255, 255, 255, .16); font-size: 14px; font-weight: 700;
+}
+.bar a:hover { background: rgba(255, 255, 255, .28); }
+
+.wrap { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 32px; max-width: 1180px; margin: 0 auto; padding: 24px; }
+.toc-side { position: sticky; top: 70px; align-self: start; max-height: calc(100vh - 90px); overflow: auto; font-size: 14px; }
+.toc-side b { display: block; margin-bottom: 6px; }
+.toc-side ol { margin: 0; padding-left: 20px; }
+.toc-side li { margin: 3px 0; }
+.toc-side a { color: var(--text); text-decoration: none; }
+.toc-side a:hover { color: var(--primary); text-decoration: underline; }
+
+article { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 40px 48px; min-width: 0; }
+.cover { text-align: center; padding: 30px 0 10px; }
+.cover .logo { width: 72px; height: 72px; color: var(--primary); }
+.cover h1 { font-size: 34px; margin: 10px 0 4px; }
+.cover .sub { font-size: 18px; color: var(--muted); margin: 0; }
+.cover .ver { margin-top: 18px; color: var(--muted); font-size: 14px; }
+.cover .maker { margin: 4px 0 0; font-size: 16px; font-weight: 700; }
+.cover-img { margin-top: 28px; }
+
+h2 {
+  font-size: 23px; margin: 56px 0 14px; padding-bottom: 8px; border-bottom: 3px solid var(--primary);
+  scroll-margin-top: 70px;
+}
+h2 .no { color: var(--primary); margin-right: 8px; }
+h3 { font-size: 18px; margin: 30px 0 8px; scroll-margin-top: 70px; }
+h4 { font-size: 15px; margin: 18px 0 4px; }
+p { margin: 8px 0; }
+ul, ol { padding-left: 22px; margin: 8px 0; }
+li { margin: 3px 0; }
+
+figure { margin: 16px 0 20px; }
+figure img { display: block; max-width: 100%; height: auto; border: 1px solid var(--border); border-radius: 10px; margin: 0 auto; }
+figure.small img { max-width: 520px; }
+figure.mid img { max-width: 720px; }
+figcaption { text-align: center; color: var(--muted); font-size: 13px; margin-top: 6px; }
+
+table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 7px 10px; text-align: left; vertical-align: top; }
+th { background: var(--surface2); font-weight: 700; }
+td.c, th.c { text-align: center; }
+
+.box { border-radius: 10px; padding: 12px 16px; margin: 14px 0; border-left: 5px solid; }
+.box.tip { background: var(--primary-weak); border-color: var(--primary); }
+.box.warn { background: rgba(178, 106, 0, .1); border-color: var(--warn); }
+.box.danger { background: rgba(192, 57, 43, .08); border-color: var(--danger); }
+.box b.t { display: block; margin-bottom: 2px; }
+
+.steps { counter-reset: s; list-style: none; padding: 0; }
+.steps > li { counter-increment: s; position: relative; padding-left: 40px; margin: 10px 0; }
+.steps > li::before {
+  content: counter(s); position: absolute; left: 0; top: 1px; width: 28px; height: 28px; border-radius: 50%;
+  background: var(--primary); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 14px;
+}
+.flow { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin: 16px 0; }
+.flow div {
+  border: 1px solid var(--border); border-top: 4px solid var(--primary); border-radius: 10px; padding: 10px 8px;
+  text-align: center; font-size: 13px; background: var(--surface2);
+}
+.flow b { display: block; font-size: 15px; margin-bottom: 2px; }
+.num {
+  display: inline-flex; width: 21px; height: 21px; border-radius: 50%; background: #e11d48; color: #fff;
+  font-size: 12px; font-weight: 700; align-items: center; justify-content: center; margin-right: 4px; vertical-align: 1px;
+}
+kbd {
+  font-family: inherit; font-size: 12px; padding: 1px 6px; border: 1px solid var(--border);
+  border-bottom-width: 2px; border-radius: 5px; background: var(--surface2); white-space: nowrap;
+}
+.btnlike {
+  display: inline-block; font-size: 13px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--surface2); white-space: nowrap; line-height: 1.6;
+}
+.team-a { color: var(--teamA); font-weight: 700; }
+.team-b { color: var(--teamB); font-weight: 700; }
+.team-c { color: var(--teamC); font-weight: 700; }
+.toc-print { display: none; }
+.foot { margin-top: 48px; color: var(--muted); font-size: 13px; text-align: center; }
+
+@media (max-width: 900px) {
+  .wrap { grid-template-columns: 1fr; padding: 12px; }
+  .toc-side { position: static; max-height: none; }
+  article { padding: 24px 18px; }
+  .flow { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* 인쇄 (PDF) */
+@media print {
+  @page { size: A4; }
+  body { background: #fff; font-size: 10.5pt; line-height: 1.6; }
+  .bar, .toc-side { display: none; }
+  .wrap { display: block; padding: 0; max-width: none; }
+  article { border: 0; padding: 0; border-radius: 0; }
+  .cover { min-height: 245mm; display: flex; flex-direction: column; justify-content: center; padding: 0; }
+  .cover h1 { font-size: 30pt; }
+  .cover-img img { max-height: 105mm; width: auto; }
+  .toc-print { display: block; break-before: page; }
+  .toc-print h2 { margin-top: 0; }
+  .toc-print ol { font-size: 11.5pt; line-height: 2; }
+  .toc-print ol ol { font-size: 10pt; line-height: 1.7; }
+  h2 { break-before: page; margin-top: 0; font-size: 17pt; }
+  h3 { font-size: 13pt; break-after: avoid; }
+  h4 { break-after: avoid; }
+  figure, table, .box, .flow { break-inside: avoid; }
+  figure img { max-height: 115mm; width: auto; }
+  figure.small img { max-height: 70mm; }
+  a { color: inherit; text-decoration: none; }
+  .box.tip { background: #e6f4ec; }
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <strong>풋살 팀 밸런서 사용자 설명서 <small style="font-weight:400;opacity:.85;margin-left:6px">제작자 : modoismodo</small></strong>
+  <a href="manual/futsal_user_manual.pdf" target="_blank" rel="noopener">PDF로 보기 / 인쇄</a>
+  <a href="index.html">앱으로 돌아가기</a>
+</div>
+
+<div class="wrap">
+  <nav class="toc-side" aria-label="목차">
+    <b>목차</b>
+    <ol>
+      <li><a href="#s1">소개</a></li>
+      <li><a href="#s2">설치와 실행</a></li>
+      <li><a href="#s3">화면 구성</a></li>
+      <li><a href="#s4">빠른 시작</a></li>
+      <li><a href="#s5">선수 관리</a></li>
+      <li><a href="#s6">경기 날짜와 참석 체크</a></li>
+      <li><a href="#s7">팀 수와 인원 규칙</a></li>
+      <li><a href="#s8">팀 구성 (평준화 / 전문화)</a></li>
+      <li><a href="#s9">선수 옮기기 (드래그)</a></li>
+      <li><a href="#s10">팀 확정과 수정</a></li>
+      <li><a href="#s11">불러오기</a></li>
+      <li><a href="#s12">PDF 출력</a></li>
+      <li><a href="#s13">공유 이미지 (카카오톡)</a></li>
+      <li><a href="#s14">키보드 단축키</a></li>
+      <li><a href="#s15">데이터 보관과 백업</a></li>
+      <li><a href="#s16">자주 묻는 질문</a></li>
+      <li><a href="#s17">부록 (제작자, 버전)</a></li>
+    </ol>
+  </nav>
+
+<article>
+
+<!-- 표지 -->
+<section class="cover">
+  <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M16 10l5 3.6-1.9 6h-6.2l-1.9-6z" fill="currentColor"/></svg>
+  <h1>풋살 팀 밸런서</h1>
+  <p class="sub">사용자 설명서 · 로컬 PC 버전</p>
+  <p class="ver">버전 1.0 · 2026년 10월</p>
+  <p class="maker">제작자 : modoismodo</p>
+  <figure class="cover-img"><img src="manual/img/08-teams-2.png" alt="팀 구성 화면"></figure>
+</section>
+
+<!-- 인쇄용 목차 -->
+<section class="toc-print">
+  <h2>목차</h2>
+  <ol>
+    <li>소개</li>
+    <li>설치와 실행</li>
+    <li>화면 구성</li>
+    <li>빠른 시작 — 처음 사용할 때 순서</li>
+    <li>선수 관리 — 등록, 능력치, 이름 수정, 삭제, 검색, 명단 옮기기</li>
+    <li>경기 날짜와 참석 체크</li>
+    <li>팀 수와 인원 규칙</li>
+    <li>팀 구성 — 평준화와 전문화</li>
+    <li>선수 옮기기 — 드래그 앤 드롭</li>
+    <li>팀 확정과 수정</li>
+    <li>불러오기</li>
+    <li>PDF 출력</li>
+    <li>공유 이미지 — 카카오톡으로 보내기</li>
+    <li>키보드 단축키</li>
+    <li>데이터 보관과 백업</li>
+    <li>자주 묻는 질문과 문제 해결</li>
+    <li>부록 — 파일 목록, 편성 규칙 요약, 제작자와 버전 정보</li>
+  </ol>
+</section>
+
+<!-- 1 -->
+<h2 id="s1"><span class="no">1</span>소개</h2>
+<p><b>풋살 팀 밸런서</b>는 풋살 경기 전에 참석한 선수들의 능력치를 바탕으로 팀을 자동으로 나눠 주는 프로그램입니다.</p>
+<ul>
+  <li><b>팀을 고르게 나눕니다.</b> 선수마다 매긴 5가지 능력치를 보고, 팀끼리 실력이 비슷하도록(평준화) 또는 실력 순서대로(전문화) 2팀이나 3팀을 만듭니다.</li>
+  <li><b>사람이 직접 고칠 수 있습니다.</b> 자동으로 나눈 결과를 마우스로 끌어서 선수를 옮기거나 맞바꿀 수 있습니다.</li>
+  <li><b>결과를 남기고 나눕니다.</b> 확정한 편성표를 파일로 저장하고, A4 PDF로 인쇄하고, 카카오톡에 붙여 넣을 수 있는 이미지로 공유합니다.</li>
+</ul>
+
+<h3>이 버전의 특징</h3>
+<table>
+  <tr><th style="width:28%">항목</th><th>내용</th></tr>
+  <tr><td>설치</td><td>필요 없습니다. 폴더 안의 <code>index.html</code>을 더블클릭하면 바로 실행됩니다.</td></tr>
+  <tr><td>서버, DB, 인터넷</td><td>필요 없습니다. 모든 기능이 PC 안에서만 동작하며, 인터넷이 끊겨도 쓸 수 있습니다.</td></tr>
+  <tr><td>데이터 저장</td><td>선수 명단과 날짜별 편성은 브라우저 안에 자동 저장됩니다. 확정한 편성표는 파일(JSON)로 저장됩니다.</td></tr>
+  <tr><td>권장 환경</td><td>Windows PC + <b>Chrome</b> 또는 <b>Microsoft Edge</b> 최신 버전, 화면 너비 1280픽셀 이상</td></tr>
+</table>
+
+<!-- 2 -->
+<h2 id="s2"><span class="no">2</span>설치와 실행</h2>
+<h3>2-1. 프로그램 폴더 준비</h3>
+<ol class="steps">
+  <li>전달받은 <code>footsalteam_web.zip</code> 파일을 PC에 저장합니다.</li>
+  <li>파일을 마우스 오른쪽 버튼으로 누르고 <span class="btnlike">압축 풀기</span> 또는 <span class="btnlike">모두 압축 풀기</span>를 누릅니다.</li>
+  <li>압축을 푼 <code>footsalteam_web</code> 폴더를 오래 둘 곳으로 옮깁니다. 예: <code>C:\futsal\footsalteam_web</code></li>
+</ol>
+<div class="box warn"><b class="t">폴더 구조를 그대로 두세요</b>
+<code>index.html</code>, <code>manual.html</code>, <code>css</code>, <code>js</code>, <code>manual</code> 폴더가 한곳에 함께 있어야 합니다. <code>index.html</code> 파일만 따로 복사하면 화면이 깨지거나 동작하지 않습니다.</div>
+
+<h3>2-2. 실행</h3>
+<ol class="steps">
+  <li><code>footsalteam_web</code> 폴더를 열고 <code>index.html</code>을 더블클릭합니다.</li>
+  <li>Chrome 또는 Edge에서 프로그램이 열립니다. 주소창에는 <code>file:///C:/futsal/footsalteam_web/index.html</code>처럼 표시됩니다.</li>
+  <li>다른 프로그램(메모장 등)으로 열리면, <code>index.html</code>을 마우스 오른쪽 버튼으로 누르고 <span class="btnlike">연결 프로그램</span> → <b>Google Chrome</b> 또는 <b>Microsoft Edge</b>를 고릅니다.</li>
+</ol>
+<div class="box tip"><b class="t">자주 쓴다면</b>
+프로그램을 연 상태에서 <kbd>Ctrl</kbd>+<kbd>D</kbd>를 눌러 즐겨찾기에 추가하거나, <code>index.html</code>을 마우스 오른쪽 버튼으로 누르고 <span class="btnlike">바로 가기 만들기</span>로 바탕화면에 바로가기를 두면 편합니다.</div>
+
+<h3>2-3. 새 버전으로 바꾸기</h3>
+<p>새 버전을 받으면 기존 <code>footsalteam_web</code> 폴더에 그대로 덮어쓰면 됩니다. 선수 명단은 폴더가 아니라 브라우저에 저장되어 있으므로 지워지지 않습니다. 그래도 바꾸기 전에 <a href="#s5-6">명단 내보내기</a>로 백업해 두기를 권합니다.</p>
+
+<!-- 3 -->
+<h2 id="s3"><span class="no">3</span>화면 구성</h2>
+<figure><img src="manual/img/01-overview.png" alt="첫 화면 구성"><figcaption>그림 3-1. 첫 화면 (경기 편성 탭)</figcaption></figure>
+<table>
+  <tr><th class="c" style="width:8%">번호</th><th style="width:22%">이름</th><th>설명</th></tr>
+  <tr><td class="c"><span class="num">1</span></td><td>탭</td><td><b>경기 편성</b>(팀 나누기), <b>선수 관리</b>(명단과 능력치), <b>PDF 미리보기</b>(출력물 확인) 화면을 오갑니다.</td></tr>
+  <tr><td class="c"><span class="num">2</span></td><td>사용설명서 / 단축키</td><td><span class="btnlike">사용설명서</span>를 누르면 이 설명서가 새 탭으로 열립니다(<kbd>F1</kbd>). <span class="btnlike">단축키</span>는 키보드 단축키 목록을 보여 줍니다. 화면 맨 아래에는 제작자 정보와 함께 설명서, 설명서 PDF 링크가 있습니다.</td></tr>
+  <tr><td class="c"><span class="num">3</span></td><td>경기일</td><td>경기 날짜를 고릅니다. 날짜마다 참석 체크와 편성이 따로 보관됩니다.</td></tr>
+  <tr><td class="c"><span class="num">4</span></td><td>팀 수</td><td>2팀 또는 3팀을 고릅니다.</td></tr>
+  <tr><td class="c"><span class="num">5</span></td><td>편성 방식</td><td>평준화(실력을 고르게) 또는 전문화(실력 순서대로)를 고릅니다.</td></tr>
+  <tr><td class="c"><span class="num">6</span></td><td>작업 버튼</td><td><span class="btnlike">불러오기</span> <span class="btnlike">팀 구성</span> <span class="btnlike">팀 확정</span> <span class="btnlike">출력</span> <span class="btnlike">공유</span>. 지금 쓸 수 없는 버튼은 흐리게 표시됩니다.</td></tr>
+  <tr><td class="c"><span class="num">7</span></td><td>참석 체크</td><td>오늘 참석하는 선수를 체크합니다. 이름 옆 숫자는 선수 점수(능력치 합계)입니다.</td></tr>
+  <tr><td class="c"><span class="num">8</span></td><td>상태 안내</td><td>참석 인원과 예상 팀 구성을 보여 줍니다. 인원이 모자라면 빨간 글씨로 "경기 불가"를 표시합니다.</td></tr>
+</table>
+<p>화면에 나타나는 짧은 알림(예: "선수를 추가했습니다")은 화면 아래 가운데에 잠시 표시되었다가 사라집니다.</p>
+<p>Windows를 다크 모드로 설정하면 프로그램도 자동으로 어두운 화면으로 바뀝니다. 창 너비를 좁히면(900픽셀 이하) 참석 체크가 위, 팀 카드가 아래로 배치됩니다.</p>
+
+<!-- 4 -->
+<h2 id="s4"><span class="no">4</span>빠른 시작</h2>
+<p>처음 사용할 때는 아래 순서대로 진행하세요. 두 번째 경기부터는 2번부터 시작하면 됩니다.</p>
+<div class="flow">
+  <div><b>1. 선수 등록</b>선수 관리 탭에서 이름과 능력치 입력</div>
+  <div><b>2. 참석 체크</b>경기일을 고르고 참석자 체크</div>
+  <div><b>3. 팀 구성</b>팀 수, 방식 고르고 [팀 구성]</div>
+  <div><b>4. 조정</b>필요하면 선수를 끌어서 옮기기</div>
+  <div><b>5. 팀 확정</b>[팀 확정] → 파일 저장, 잠금</div>
+  <div><b>6. 출력·공유</b>PDF 인쇄, 카톡 이미지 공유</div>
+</div>
+<ol class="steps">
+  <li><b>선수 등록:</b> <span class="btnlike">선수 관리</span> 탭에서 이름을 입력하고 <kbd>Enter</kbd>. 등록한 선수의 능력치 버튼(1·2·3)을 눌러 실력을 매깁니다. (<a href="#s5">5장</a>)</li>
+  <li><b>참석 체크:</b> <span class="btnlike">경기 편성</span> 탭에서 경기일을 확인하고, 참석하는 선수를 체크합니다. (<a href="#s6">6장</a>)</li>
+  <li><b>팀 구성:</b> 2팀/3팀, 평준화/전문화를 고르고 <span class="btnlike">팀 구성</span>을 누릅니다. 마음에 들 때까지 <span class="btnlike">다시 구성</span>을 눌러도 됩니다. (<a href="#s8">8장</a>)</li>
+  <li><b>조정:</b> 같이 뛰어야 하는 사람, 떨어져야 하는 사람이 있으면 선수 이름을 끌어서 옮깁니다. (<a href="#s9">9장</a>)</li>
+  <li><b>팀 확정:</b> <span class="btnlike">팀 확정</span>을 누르면 편성표 파일이 저장되고 편집이 잠깁니다. (<a href="#s10">10장</a>)</li>
+  <li><b>출력·공유:</b> <span class="btnlike">출력</span>으로 PDF를 받거나, <span class="btnlike">공유</span>로 팀 명단 이미지를 카카오톡에 붙여 넣습니다. (<a href="#s12">12장</a>, <a href="#s13">13장</a>)</li>
+</ol>
+
+<!-- 5 -->
+<h2 id="s5"><span class="no">5</span>선수 관리</h2>
+<figure><img src="manual/img/03-players.png" alt="선수 관리 화면"><figcaption>그림 5-1. 선수 관리 화면</figcaption></figure>
+<table>
+  <tr><th class="c" style="width:8%">번호</th><th style="width:22%">이름</th><th>설명</th></tr>
+  <tr><td class="c"><span class="num">1</span></td><td>이름 입력, 선수 추가</td><td>새 선수를 등록합니다.</td></tr>
+  <tr><td class="c"><span class="num">2</span></td><td>이름 검색</td><td>글자를 입력하면 이름에 그 글자가 들어간 선수만 보입니다.</td></tr>
+  <tr><td class="c"><span class="num">3</span></td><td>명단 내보내기 / 가져오기</td><td>명단을 파일로 백업하거나 다른 PC로 옮깁니다.</td></tr>
+  <tr><td class="c"><span class="num">4</span></td><td>능력치</td><td>5개 항목마다 1·2·3 중 하나를 누릅니다. 초록색이 현재 값입니다.</td></tr>
+  <tr><td class="c"><span class="num">5</span></td><td>합계</td><td>5개 능력치를 더한 선수 점수(5~15점)입니다.</td></tr>
+  <tr><td class="c"><span class="num">6</span></td><td>수정 / 삭제</td><td>이름을 바꾸거나 선수를 지웁니다.</td></tr>
+</table>
+
+<h3 id="s5-1">5-1. 선수 등록</h3>
+<figure class="mid"><img src="manual/img/02-add-player.png" alt="선수 추가"><figcaption>그림 5-2. 이름을 입력하고 Enter</figcaption></figure>
+<ol class="steps">
+  <li><span class="btnlike">선수 관리</span> 탭(<kbd>Alt</kbd>+<kbd>2</kbd>)을 엽니다.</li>
+  <li><span class="btnlike">이름 입력</span> 칸에 이름을 쓰고 <kbd>Enter</kbd>를 누르거나 <span class="btnlike">선수 추가</span>를 누릅니다.</li>
+  <li>목록 맨 아래에 선수가 추가됩니다. 새 선수의 능력치는 모두 <b>2(보통)</b>, 합계는 <b>10점</b>입니다.</li>
+  <li>입력 칸에 커서가 그대로 있으므로 이어서 다음 이름을 입력하면 됩니다.</li>
+</ol>
+<ul>
+  <li><b>같은 이름은 등록할 수 없습니다.</b> "이미 같은 이름의 선수가 있습니다"라는 알림이 나옵니다. 동명이인은 "김민수A", "김민수(87)"처럼 구분해서 등록하세요.</li>
+  <li>이름은 20자까지 입력할 수 있고, 빈칸만 입력하면 등록되지 않습니다.</li>
+</ul>
+
+<h3 id="s5-2">5-2. 능력치 매기기</h3>
+<p>능력치 5개 항목은 각각 <b>1(낮음) · 2(보통) · 3(높음)</b> 세 단계입니다. 숫자 버튼을 누르면 바로 바뀌고 자동 저장됩니다. 저장 버튼은 따로 없습니다.</p>
+<table>
+  <tr><th style="width:16%">항목</th><th>뜻</th><th style="width:34%">매기는 예</th></tr>
+  <tr><td>활동량</td><td>경기 내내 얼마나 많이 뛰는가</td><td>쉬지 않고 뛰면 3, 자주 쉬면 1</td></tr>
+  <tr><td>스피드</td><td>달리기와 순간 움직임이 얼마나 빠른가</td><td>팀에서 가장 빠른 편이면 3</td></tr>
+  <tr><td>개인기</td><td>드리블, 볼 터치, 슈팅 등 공 다루는 기술</td><td>혼자 수비를 제칠 수 있으면 3</td></tr>
+  <tr><td>협동력</td><td>패스, 위치 선정, 수비 가담 등 팀플레이</td><td>패스를 잘 돌리고 수비도 하면 3</td></tr>
+  <tr><td>컨디션</td><td>요즘 몸 상태와 경기 감각</td><td>부상 회복 중이면 1, 최근 꾸준히 뛰면 3</td></tr>
+</table>
+<div class="box tip"><b class="t">점수 매기기 요령</b>
+<ul>
+  <li>처음에는 모두 2로 두고, 확실히 잘하거나 부족한 항목만 3이나 1로 바꾸세요.</li>
+  <li><b>컨디션</b>은 경기 전에 바꿔 주면 좋습니다. 부상, 장기 결석 같은 사정을 반영할 수 있습니다.</li>
+  <li>선수 점수(합계)는 경기 편성 화면의 참석 체크와 팀 카드에도 표시됩니다.</li>
+</ul></div>
+
+<h3 id="s5-3">5-3. 이름 수정</h3>
+<figure><img src="manual/img/04-rename.png" alt="이름 수정"><figcaption>그림 5-3. 이름 수정 중인 화면 (3번 선수)</figcaption></figure>
+<ol class="steps">
+  <li>바꿀 선수 줄의 <span class="btnlike">수정</span>을 누르거나, 이름을 <b>더블클릭</b>합니다.</li>
+  <li>이름 칸이 입력 칸으로 바뀌면 새 이름을 입력합니다.</li>
+  <li><kbd>Enter</kbd> 또는 <span class="btnlike">저장</span>을 누르면 저장됩니다. <kbd>Esc</kbd> 또는 <span class="btnlike">취소</span>를 누르면 원래 이름으로 돌아갑니다.</li>
+</ol>
+<p>다른 선수와 같은 이름으로는 바꿀 수 없습니다. 이미 확정한 편성표에는 확정할 때의 이름이 그대로 남습니다.</p>
+
+<h3 id="s5-4">5-4. 선수 삭제</h3>
+<figure class="small"><img src="manual/img/05-delete.png" alt="삭제 확인 창"><figcaption>그림 5-4. 삭제 확인 창</figcaption></figure>
+<ol class="steps">
+  <li>지울 선수 줄의 <span class="btnlike">삭제</span>를 누릅니다.</li>
+  <li>확인 창에서 빨간 <span class="btnlike">삭제</span>를 누릅니다. 그만두려면 <span class="btnlike">취소</span> 또는 <kbd>Esc</kbd>.</li>
+</ol>
+<div class="box warn"><b class="t">삭제는 되돌릴 수 없습니다</b>
+지운 선수는 현재 경기일의 참석 체크에서도 빠지고, 편성 중이던 팀 카드가 지워집니다(다시 <span class="btnlike">팀 구성</span> 필요). 이미 확정한 편성표에는 영향이 없습니다. 실수로 지웠다면 <span class="btnlike">명단 가져오기</span>로 백업 파일에서 다시 불러올 수 있습니다.</div>
+
+<h3 id="s5-5">5-5. 이름 검색</h3>
+<p><span class="btnlike">이름 검색</span> 칸에 글자를 입력하면 그 글자가 들어간 선수만 표시됩니다. 예를 들어 "민"을 입력하면 김민수, 송민재, 윤성민이 보입니다. 검색 칸을 비우면 전체가 다시 보입니다. 다른 곳에 커서가 없을 때 <kbd>/</kbd>를 누르면 검색 칸으로 바로 이동합니다.</p>
+
+<h3 id="s5-6">5-6. 명단 내보내기 / 가져오기</h3>
+<p>선수 명단을 파일로 저장해 두었다가 다시 불러오는 기능입니다. <b>백업</b>과 <b>다른 PC나 다른 브라우저로 옮기기</b>에 씁니다.</p>
+<h4>내보내기</h4>
+<p><span class="btnlike">명단 내보내기</span>를 누르면 <code>futsal_players_날짜.json</code> 파일이 PC의 <b>다운로드</b> 폴더에 저장됩니다. 이 파일에는 모든 선수의 이름과 능력치가 들어 있습니다.</p>
+<h4>가져오기</h4>
+<ol class="steps">
+  <li><span class="btnlike">명단 가져오기</span>를 누르고, 내보내기로 저장한 파일을 고릅니다.</li>
+  <li>"추가 n명, 갱신 n명" 알림이 나오고 목록에 반영됩니다.</li>
+</ol>
+<table>
+  <tr><th style="width:40%">파일 속 선수가</th><th>처리</th></tr>
+  <tr><td>지금 명단에 없는 새 선수</td><td>명단에 <b>추가</b></td></tr>
+  <tr><td>지금 명단에 있는 같은 선수(같은 파일에서 나온 선수)</td><td>이름과 능력치를 파일 내용으로 <b>갱신</b></td></tr>
+  <tr><td>다른 선수인데 이름만 같음</td><td><b>건너뜀</b> (기존 선수를 그대로 둠)</td></tr>
+</table>
+
+<!-- 6 -->
+<h2 id="s6"><span class="no">6</span>경기 날짜와 참석 체크</h2>
+<figure><img src="manual/img/06-attendance.png" alt="참석 체크"><figcaption>그림 6-1. 18명 중 16명을 참석 체크한 화면</figcaption></figure>
+
+<h3>6-1. 경기일 고르기</h3>
+<ul>
+  <li>프로그램을 열면 <b>오늘 날짜</b>가 선택되어 있습니다. 옆에 "2026년 10월 11일 (일)"처럼 요일이 함께 표시됩니다.</li>
+  <li>날짜 칸을 누르면 달력이 열립니다. 날짜를 고르면 그 날짜의 화면으로 바뀝니다.</li>
+  <li><span class="btnlike">오늘</span>을 누르면 오늘 날짜로 돌아옵니다.</li>
+  <li>키보드 <kbd>[</kbd>는 하루 전, <kbd>]</kbd>는 하루 뒤로 이동합니다.</li>
+</ul>
+<div class="box tip"><b class="t">날짜마다 따로 보관됩니다</b>
+참석 체크, 팀 수, 편성 방식, 팀 편성, 확정 여부가 날짜별로 저장됩니다. 다른 날짜로 갔다가 돌아와도 그대로 남아 있습니다. 처음 고른 날짜는 참석 체크가 비어 있습니다.</div>
+<p>날짜 칸의 표시 형식(예: <code>2026. 10. 11.</code> 또는 <code>10/11/2026</code>)은 PC와 브라우저의 언어 설정에 따라 다를 수 있습니다. 옆에 표시되는 한글 날짜를 기준으로 확인하세요.</p>
+
+<h3>6-2. 참석 체크</h3>
+<ul>
+  <li>선수 이름이나 체크 상자를 누르면 체크/해제됩니다.</li>
+  <li><span class="btnlike">전체 선택</span>은 모든 선수를, <span class="btnlike">전체 해제</span>는 아무도 체크하지 않은 상태로 만듭니다. 대부분 참석하는 날에는 전체 선택 후 빠진 사람만 해제하면 빠릅니다.</li>
+  <li>"참석 체크 16/18"은 전체 18명 중 16명이 체크되었다는 뜻입니다.</li>
+  <li>선수가 많으면 <span class="btnlike">이름 검색</span> 칸(<kbd>/</kbd>)으로 찾아서 체크하세요.</li>
+  <li>상단 상태 안내에 "참석 16명 → A팀 7명 + B팀 7명 + 교체대기 2명"처럼 예상 구성이 바로 표시됩니다.</li>
+</ul>
+<div class="box warn"><b class="t">참석을 바꾸면 팀이 다시 비워집니다</b>
+팀을 구성한 뒤에 참석 체크를 바꾸면 지금 팀 카드가 지워집니다. 참석자가 달라졌으니 <span class="btnlike">팀 구성</span>을 다시 눌러 주세요.</div>
+
+<!-- 7 -->
+<h2 id="s7"><span class="no">7</span>팀 수와 인원 규칙</h2>
+<p>툴바의 <span class="btnlike">2팀</span> <span class="btnlike">3팀</span> 중에서 고릅니다. 팀 인원은 다음 규칙으로 자동으로 정해집니다.</p>
+<ol>
+  <li>한 팀은 <b>5명 이상 7명 이하</b>입니다.</li>
+  <li>참석 인원을 팀끼리 <b>최대 1명 차이</b>로 고르게 나눕니다. 1명 많은 팀은 A팀부터입니다.</li>
+  <li>팀에 다 들어가지 못하는 인원(팀 수 × 7명 초과)은 <b>교체대기</b>가 됩니다. 교체대기는 <b>무작위</b>로 뽑습니다.</li>
+  <li>인원이 모자라면(2팀은 10명 미만, 3팀은 15명 미만) <b>경기 불가</b>로 표시되고 <span class="btnlike">팀 구성</span>을 누를 수 없습니다.</li>
+</ol>
+<figure class="mid"><img src="manual/img/07-not-enough.png" alt="경기 불가"><figcaption>그림 7-1. 14명 참석에 3팀을 고른 경우 (최소 15명 필요)</figcaption></figure>
+<table>
+  <tr><th class="c">참석</th><th>2팀 선택</th><th>3팀 선택</th></tr>
+  <tr><td class="c">9명 이하</td><td>경기 불가</td><td>경기 불가</td></tr>
+  <tr><td class="c">10</td><td>A5 + B5</td><td>경기 불가</td></tr>
+  <tr><td class="c">11</td><td>A6 + B5</td><td>경기 불가</td></tr>
+  <tr><td class="c">12</td><td>A6 + B6</td><td>경기 불가</td></tr>
+  <tr><td class="c">13</td><td>A7 + B6</td><td>경기 불가</td></tr>
+  <tr><td class="c">14</td><td>A7 + B7</td><td>경기 불가</td></tr>
+  <tr><td class="c">15</td><td>A7 + B7 + 대기 1</td><td>A5 + B5 + C5</td></tr>
+  <tr><td class="c">16</td><td>A7 + B7 + 대기 2</td><td>A6 + B5 + C5</td></tr>
+  <tr><td class="c">18</td><td>A7 + B7 + 대기 4</td><td>A6 + B6 + C6</td></tr>
+  <tr><td class="c">20</td><td>A7 + B7 + 대기 6</td><td>A7 + B7 + C6</td></tr>
+  <tr><td class="c">21</td><td>A7 + B7 + 대기 7</td><td>A7 + B7 + C7</td></tr>
+  <tr><td class="c">23</td><td>A7 + B7 + 대기 9</td><td>A7 + B7 + C7 + 대기 2</td></tr>
+</table>
+<p>팀 이름은 <span class="team-a">A팀(파랑)</span>, <span class="team-b">B팀(빨강)</span>, <span class="team-c">C팀(주황)</span>이고 교체대기는 회색입니다. 팀을 구성한 뒤 팀 수를 바꾸면 팀 카드가 지워지므로 <span class="btnlike">팀 구성</span>을 다시 누르세요.</p>
+
+<!-- 8 -->
+<h2 id="s8"><span class="no">8</span>팀 구성 (평준화 / 전문화)</h2>
+<h3>8-1. 편성 방식</h3>
+<table>
+  <tr><th style="width:16%">방식</th><th>나누는 방법</th><th style="width:28%">이럴 때</th></tr>
+  <tr><td><b>평준화</b></td><td>점수가 높은 선수부터 A→B→B→A(3팀은 A→B→C→C→B→A) 순서로 번갈아 넣은 뒤, 팀 사이에서 선수를 맞바꿔 가며 <b>팀 총점</b>과 <b>항목별 능력치</b>가 가장 비슷해지는 조합을 찾습니다.</td><td>평소 친선 경기. 어느 팀이 이길지 모르는 접전을 원할 때</td></tr>
+  <tr><td><b>전문화</b></td><td>점수가 높은 선수부터 A팀을 채우고, 그다음 선수들로 B팀, 그다음 C팀을 채웁니다.</td><td>실력이 비슷한 사람끼리 뛰게 하고 싶을 때 (수준별 경기)</td></tr>
+</table>
+<p>두 방식 모두 <b>교체대기를 먼저 무작위로 뽑은 다음</b> 나머지 선수로 팀을 나눕니다. 점수가 같은 선수끼리의 순서도 매번 무작위로 섞습니다.</p>
+
+<h3>8-2. 팀 구성하기</h3>
+<ol class="steps">
+  <li>팀 수(<span class="btnlike">2팀</span>/<span class="btnlike">3팀</span>)와 방식(<span class="btnlike">평준화</span>/<span class="btnlike">전문화</span>)을 고릅니다.</li>
+  <li><span class="btnlike">팀 구성</span>을 누릅니다 (<kbd>Ctrl</kbd>+<kbd>Enter</kbd>).</li>
+  <li>팀 카드가 나타나고, 버튼 이름이 <span class="btnlike">다시 구성</span>으로 바뀝니다.</li>
+  <li>결과가 마음에 들지 않으면 <span class="btnlike">다시 구성</span>을 누를 때마다 새 조합이 나옵니다. 교체대기 선수도 다시 뽑힙니다.</li>
+</ol>
+<p>팀을 구성한 상태에서 편성 방식을 바꾸면 바뀐 방식으로 <b>즉시 다시 구성</b>됩니다.</p>
+<figure><img src="manual/img/08-teams-2.png" alt="2팀 구성 결과"><figcaption>그림 8-1. 16명, 2팀, 평준화로 구성한 결과</figcaption></figure>
+
+<h3>8-3. 팀 카드 읽는 법</h3>
+<figure class="small"><img src="manual/img/09-team-card.png" alt="팀 카드"><figcaption>그림 8-2. 팀 카드</figcaption></figure>
+<table>
+  <tr><th class="c" style="width:8%">번호</th><th>설명 (그림 8-1 기준)</th></tr>
+  <tr><td class="c"><span class="num">1</span></td><td>팀 이름(팀 색), 인원, 팀 총점(선수 점수의 합)</td></tr>
+  <tr><td class="c"><span class="num">2</span></td><td>선수 이름과 선수 점수. 이름 위에 마우스를 올려 두면 5개 능력치가 작은 글씨로 나타납니다.</td></tr>
+  <tr><td class="c"><span class="num">3</span></td><td>빈 슬롯. 다른 팀 선수를 끌어다 놓을 수 있는 자리입니다. 팀마다 처음에 2개씩 있습니다.</td></tr>
+  <tr><td class="c"><span class="num">4</span></td><td>항목별 합계. 팀 선수들의 활동량, 스피드, 개인기, 협동력, 컨디션을 각각 더한 값입니다.</td></tr>
+  <tr><td class="c"><span class="num">5</span></td><td>교체대기 카드. 팀에 들어가지 못한 선수들입니다. 교체대기가 없어도 카드는 보이며, 선수를 여기로 옮길 수 있습니다.</td></tr>
+  <tr><td class="c"><span class="num">6</span></td><td>팀 총점 비교. "팀 총점 77 / 77 (차이 0점)"처럼 팀끼리 얼마나 비슷한지 보여 줍니다.</td></tr>
+</table>
+<div class="box tip"><b class="t">총점 차이가 커 보일 때</b>
+평준화는 팀 인원이 다를 때(예: 6명과 5명) <b>1인당 평균</b>으로 비교해서 맞춥니다. 그래서 인원이 많은 팀의 총점이 더 높게 나오는 것이 정상입니다. 인원이 같은 팀끼리는 보통 0~3점 차이입니다.</div>
+<figure><img src="manual/img/13-teams-3.png" alt="3팀 구성 결과"><figcaption>그림 8-3. 18명, 3팀으로 구성한 결과</figcaption></figure>
+
+<!-- 9 -->
+<h2 id="s9"><span class="no">9</span>선수 옮기기 (드래그)</h2>
+<p>팀을 구성한 뒤, 확정하기 전까지는 선수를 마우스로 끌어서 옮길 수 있습니다. 선수 이름을 <b>누른 채로 끌고 가서</b> 원하는 곳에 <b>놓으면</b> 됩니다. 끌고 있는 동안 놓을 카드는 팀 색 테두리로, 맞바꿀 선수는 테두리로 강조됩니다.</p>
+<figure><img src="manual/img/10-dragging.png" alt="드래그 중"><figcaption>그림 9-1. A팀 강동원을 B팀 임도현 위로 끌고 있는 모습 (놓으면 두 선수가 맞바뀜)</figcaption></figure>
+<table>
+  <tr><th style="width:34%">놓는 곳</th><th>결과</th></tr>
+  <tr><td>다른 팀의 <b>빈 슬롯</b> (또는 카드의 빈 곳)</td><td>선수가 그 팀으로 <b>이동</b>합니다. 원래 팀에는 빈 슬롯이 하나 늘고, 옮긴 팀은 하나 줄어듭니다.</td></tr>
+  <tr><td>다른 <b>선수 위</b></td><td>두 선수가 서로 <b>맞바뀝니다</b>. 같은 팀 안에서 하면 순서만 바뀝니다.</td></tr>
+  <tr><td><b>교체대기</b> 카드</td><td>선수가 교체대기로 이동합니다. 교체대기는 인원 제한이 없습니다.</td></tr>
+  <tr><td>교체대기 선수를 팀 선수 위에</td><td>교체대기 선수가 팀에 들어가고, 그 팀 선수가 교체대기로 갑니다.</td></tr>
+</table>
+<p>합계, 총점, 인원은 옮길 때마다 바로 다시 계산됩니다.</p>
+
+<h3>9-1. 빈 슬롯이 없을 때</h3>
+<p>빈 슬롯이 0개인 팀의 빈 곳에 놓으면 "빈 슬롯이 없습니다. 선수 위에 놓아 맞바꾸세요."라는 알림이 나오고 옮겨지지 않습니다. 이때는 그 팀 선수 위에 놓아 맞바꾸거나, 그 팀 선수를 먼저 다른 곳으로 옮기세요.</p>
+
+<h3>9-2. 인원 경고</h3>
+<figure><img src="manual/img/11-warning.png" alt="인원 경고"><figcaption>그림 9-2. A팀 6명, B팀 8명이 되어 B팀에 경고가 표시된 모습</figcaption></figure>
+<p>옮긴 결과 팀 인원이 5명보다 적거나 7명보다 많아지면 카드에 <b style="color:var(--warn)">"팀 인원은 5~7명이어야 합니다"</b> 경고가 나타납니다. 경고가 있어도 계속 옮길 수는 있지만, 이 상태로는 <b>팀을 확정할 수 없습니다</b>.</p>
+
+<!-- 10 -->
+<h2 id="s10"><span class="no">10</span>팀 확정과 수정</h2>
+<h3>10-1. 팀 확정</h3>
+<ol class="steps">
+  <li>편성이 마음에 들면 <span class="btnlike">팀 확정</span>을 누릅니다 (<kbd>Ctrl</kbd>+<kbd>S</kbd>).</li>
+  <li><code>futsal_teams_2026-10-11.json</code>처럼 <b>경기일이 붙은 편성표 파일</b>이 다운로드 폴더에 저장됩니다.</li>
+  <li>화면에 "확정된 편성입니다 (확정 시각)"이 표시되고 편집이 잠깁니다.</li>
+</ol>
+<figure><img src="manual/img/14-confirmed.png" alt="확정된 화면"><figcaption>그림 10-1. 확정된 편성</figcaption></figure>
+<p>확정하면 다음이 바뀝니다.</p>
+<ul>
+  <li>참석 체크, 팀 수, 편성 방식, 드래그가 잠깁니다.</li>
+  <li>빈 슬롯이 숨겨지고, 교체대기가 없으면 교체대기 카드도 숨겨집니다.</li>
+  <li><span class="btnlike">팀 확정</span> 자리에 <span class="btnlike">수정</span>이 나타나고, <span class="btnlike">출력</span>과 <span class="btnlike">공유</span>를 누를 수 있게 됩니다.</li>
+</ul>
+<figure class="mid"><img src="manual/img/15-confirmed-buttons.png" alt="확정 후 버튼"><figcaption>그림 10-2. 확정 후 버튼</figcaption></figure>
+
+<h3>10-2. 확정할 수 없을 때</h3>
+<figure class="small"><img src="manual/img/12-cannot-confirm.png" alt="확정 불가"><figcaption>그림 10-3. 인원 경고가 있는 상태에서 확정을 누른 경우</figcaption></figure>
+<p>인원이 5~7명이 아닌 팀이 있으면 "확정할 수 없습니다" 창에 문제가 있는 팀 이름이 표시됩니다. <span class="btnlike">확인</span>을 누르고 선수를 옮겨 인원을 맞춘 뒤 다시 확정하세요.</p>
+
+<h3>10-3. 수정 (확정 풀기)</h3>
+<p>확정한 뒤 바꿀 것이 생기면 <span class="btnlike">수정</span>을 누릅니다. 잠금이 풀려 다시 참석 체크, 드래그, 다시 구성을 할 수 있고, <span class="btnlike">출력</span>과 <span class="btnlike">공유</span>는 다시 흐려집니다. 고친 뒤 <span class="btnlike">팀 확정</span>을 다시 누르면 새 편성표 파일이 저장됩니다.</p>
+<div class="box tip"><b class="t">같은 날짜를 다시 확정하면</b>
+브라우저가 같은 이름의 파일이 있으면 <code>futsal_teams_2026-10-11 (1).json</code>처럼 번호를 붙여 저장합니다. 가장 나중에 받은 파일이 최신 편성입니다.</div>
+
+<!-- 11 -->
+<h2 id="s11"><span class="no">11</span>불러오기</h2>
+<p>저장해 둔 편성표 파일(<code>futsal_teams_날짜.json</code>)을 다시 여는 기능입니다. 지난 경기 편성을 다시 보거나, 다른 PC에서 만든 편성을 이어서 쓸 때 사용합니다.</p>
+<ol class="steps">
+  <li><span class="btnlike">경기 편성</span> 탭에서 <span class="btnlike">불러오기</span>를 누릅니다 (<kbd>Ctrl</kbd>+<kbd>O</kbd>).</li>
+  <li>파일 선택 창에서 편성표 파일을 고르고 <span class="btnlike">열기</span>를 누릅니다.</li>
+  <li>파일에 저장된 <b>경기일로 이동</b>하고, 편성이 그대로 표시됩니다. 확정된 파일이면 확정 상태로 열립니다.</li>
+</ol>
+<figure><img src="manual/img/19-loaded.png" alt="불러온 화면"><figcaption>그림 11-1. 선수 명단이 비어 있는 PC에서 편성표를 불러온 모습</figcaption></figure>
+<ul>
+  <li><b>명단에 없는 선수</b>가 파일에 있으면, 파일에 저장된 능력치로 명단에 자동 추가하고 "명단에 없던 선수 n명을 추가했습니다"라고 알려 줍니다.</li>
+  <li>불러온 날짜에 이미 편성이 있었다면 파일 내용으로 바뀝니다.</li>
+  <li>불러온 편성도 <span class="btnlike">수정</span>을 눌러 다시 편집하고 확정할 수 있습니다.</li>
+</ul>
+<figure class="small"><img src="manual/img/20-bad-file.png" alt="잘못된 파일"><figcaption>그림 11-2. 편성표가 아닌 파일을 고른 경우</figcaption></figure>
+<p>편성표 파일이 아니거나 내용이 손상된 파일을 고르면 "파일을 읽을 수 없습니다" 창이 나오고, 지금 화면은 바뀌지 않습니다.</p>
+
+<!-- 12 -->
+<h2 id="s12"><span class="no">12</span>PDF 출력</h2>
+<p>확정한 편성표를 A4 PDF 파일로 만듭니다. 팀을 확정해야 쓸 수 있습니다.</p>
+<ol class="steps">
+  <li>팀을 확정한 뒤 <span class="btnlike">출력</span>을 누릅니다 (<kbd>Ctrl</kbd>+<kbd>P</kbd>).</li>
+  <li><code>futsal_teams_날짜.pdf</code> 파일이 다운로드 폴더에 저장됩니다.</li>
+  <li>파일을 열어 인쇄하거나, 단체 대화방에 파일로 보냅니다.</li>
+</ol>
+<p>PDF에는 제목, 경기일(요일), 편성 방식, 팀별 표(선수 이름, 5개 능력치, 합계, 팀 합계), 교체대기 명단이 들어갑니다. 팀이 많아 한 쪽에 들어가지 않으면 다음 쪽으로 넘어가고 쪽 번호가 붙습니다.</p>
+<h3>12-1. PDF 미리보기</h3>
+<figure><img src="manual/img/16-preview.png" alt="PDF 미리보기"><figcaption>그림 12-1. PDF 미리보기 탭</figcaption></figure>
+<p><span class="btnlike">PDF 미리보기</span> 탭(<kbd>Alt</kbd>+<kbd>3</kbd>)에서 PDF와 똑같은 내용을 화면으로 볼 수 있습니다. 여기서도 <span class="btnlike">PDF 내려받기</span>로 파일을 받을 수 있습니다. 확정 전에는 안내 문구만 표시됩니다.</p>
+<div class="box tip"><b class="t">인쇄 요령</b>
+PDF 뷰어의 인쇄 설정에서 용지는 <b>A4</b>, 크기는 <b>실제 크기(100%)</b> 또는 <b>페이지에 맞춤</b>을 고르세요.</div>
+<div class="box warn"><b class="t">참고</b>
+이 PDF는 편성표 페이지를 그림으로 만들어 넣은 방식입니다. 그래서 PDF 안의 글자를 마우스로 선택하거나 검색할 수는 없습니다. 인쇄 품질에는 문제가 없습니다.</div>
+
+<!-- 13 -->
+<h2 id="s13"><span class="no">13</span>공유 이미지 (카카오톡)</h2>
+<p>팀별 선수 이름만 담은 이미지를 만들어 카카오톡 같은 메신저에 바로 붙여 넣을 수 있습니다. 이미지에는 <b>능력치와 점수가 들어가지 않으므로</b> 선수들에게 그대로 보여 줘도 됩니다.</p>
+<figure><img src="manual/img/17-share.png" alt="공유 창"><figcaption>그림 13-1. 공유 창 ([이미지 복사]를 누른 뒤)</figcaption></figure>
+<ol class="steps">
+  <li>팀을 확정한 뒤 <span class="btnlike">공유</span>를 누릅니다.</li>
+  <li>공유 창에 날짜, 팀 이름(팀 색), 번호와 선수 이름, 교체대기가 담긴 이미지가 나타납니다.</li>
+  <li><span class="btnlike">이미지 복사</span>를 누르면 "복사했습니다" 안내가 나옵니다.</li>
+  <li>카카오톡 PC 대화창을 열고 <kbd>Ctrl</kbd>+<kbd>V</kbd>로 붙여 넣은 뒤 전송합니다.</li>
+</ol>
+<ul>
+  <li><span class="btnlike">이미지 저장</span>을 누르면 <code>futsal_teams_날짜.png</code> 파일로 저장됩니다. 복사가 안 되는 환경이거나 파일로 보내고 싶을 때 쓰세요.</li>
+  <li>창은 <span class="btnlike">닫기</span>, <kbd>Esc</kbd>, 또는 창 바깥을 눌러 닫습니다.</li>
+</ul>
+
+<!-- 14 -->
+<h2 id="s14"><span class="no">14</span>키보드 단축키</h2>
+<p>화면 오른쪽 위 <span class="btnlike">단축키</span>를 누르거나 <kbd>?</kbd>를 누르면 프로그램 안에서도 이 목록을 볼 수 있습니다.</p>
+<table>
+  <tr><th style="width:34%">키</th><th>동작</th><th style="width:26%">비고</th></tr>
+  <tr><td><kbd>F1</kbd></td><td>사용자 설명서 열기 (새 탭)</td><td>어디서나</td></tr>
+  <tr><td><kbd>Alt</kbd>+<kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd></td><td>경기 편성 / 선수 관리 / PDF 미리보기 탭</td><td>어디서나</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>팀 구성 / 다시 구성</td><td>경기 편성 탭으로 이동 후 실행</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>팀 확정 (편성표 파일 저장)</td><td>팀 구성 후</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>불러오기</td><td></td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>P</kbd></td><td>PDF 출력</td><td>확정 후. 브라우저 인쇄 대신 PDF를 저장</td></tr>
+  <tr><td><kbd>[</kbd> / <kbd>]</kbd></td><td>경기일 하루 전 / 하루 뒤</td><td>경기 편성 탭, 입력 칸 밖에서</td></tr>
+  <tr><td><kbd>/</kbd></td><td>이름 검색 칸으로 이동</td><td>입력 칸 밖에서</td></tr>
+  <tr><td><kbd>Enter</kbd></td><td>선수 추가, 이름 수정 저장</td><td>입력 칸에서</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>창 닫기, 이름 수정 취소</td><td></td></tr>
+  <tr><td><kbd>?</kbd></td><td>단축키 도움말</td><td>입력 칸 밖에서</td></tr>
+</table>
+<figure class="small"><img src="manual/img/18-shortcuts.png" alt="단축키 도움말"><figcaption>그림 14-1. 프로그램 안의 단축키 도움말</figcaption></figure>
+
+<!-- 15 -->
+<h2 id="s15"><span class="no">15</span>데이터 보관과 백업</h2>
+<h3>15-1. 무엇이 어디에 저장되나</h3>
+<table>
+  <tr><th style="width:30%">데이터</th><th style="width:30%">저장 위치</th><th>저장 시점</th></tr>
+  <tr><td>선수 명단, 능력치</td><td>브라우저 저장소</td><td>바꿀 때마다 자동</td></tr>
+  <tr><td>날짜별 참석, 편성, 확정 상태</td><td>브라우저 저장소</td><td>바꿀 때마다 자동</td></tr>
+  <tr><td>확정 편성표 <code>futsal_teams_날짜.json</code></td><td>PC 다운로드 폴더</td><td>[팀 확정]을 누를 때</td></tr>
+  <tr><td>편성표 PDF / 공유 이미지</td><td>PC 다운로드 폴더</td><td>[출력] / [이미지 저장]을 누를 때</td></tr>
+  <tr><td>명단 백업 <code>futsal_players_날짜.json</code></td><td>PC 다운로드 폴더</td><td>[명단 내보내기]를 누를 때</td></tr>
+</table>
+
+<h3>15-2. 꼭 알아 둘 점</h3>
+<div class="box danger"><b class="t">브라우저 저장소는 브라우저마다 따로입니다</b>
+<ul>
+  <li>Chrome에서 입력한 명단은 Edge에서 보이지 않습니다. <b>한 가지 브라우저를 정해서</b> 쓰세요.</li>
+  <li>브라우저의 <b>인터넷 사용 기록 삭제</b>에서 "쿠키 및 기타 사이트 데이터"를 지우면 명단과 편성이 모두 지워집니다.</li>
+  <li><b>시크릿 창(InPrivate 창)</b>에서 열면 창을 닫을 때 데이터가 사라집니다.</li>
+  <li>저장소를 쓸 수 없는 환경에서는 화면 위에 주황색 경고 띠가 나타납니다. 이때는 새로고침하면 데이터가 사라지므로 파일로 저장해 두세요.</li>
+</ul></div>
+
+<h3>15-3. 권장 백업 방법</h3>
+<ol class="steps">
+  <li>선수를 많이 등록하거나 능력치를 크게 바꾼 날에는 <span class="btnlike">명단 내보내기</span>를 누릅니다.</li>
+  <li>다운로드 폴더에 생긴 <code>futsal_players_날짜.json</code>과 <code>futsal_teams_날짜.json</code> 파일을 <code>C:\futsal\백업</code>처럼 한 폴더에 모아 둡니다. USB나 클라우드 드라이브에 함께 두면 더 안전합니다.</li>
+  <li>명단이 사라졌다면 <span class="btnlike">명단 가져오기</span>로 가장 최근 백업 파일을 불러옵니다.</li>
+</ol>
+
+<h3>15-4. 다른 PC로 옮기기</h3>
+<ol class="steps">
+  <li>지금 PC에서 <span class="btnlike">명단 내보내기</span>로 명단 파일을 만듭니다.</li>
+  <li><code>footsalteam_web</code> 폴더(또는 zip 파일)와 명단 파일, 필요한 편성표 파일을 새 PC로 복사합니다.</li>
+  <li>새 PC에서 <code>index.html</code>을 열고 <span class="btnlike">선수 관리</span> → <span class="btnlike">명단 가져오기</span>로 명단을 불러옵니다.</li>
+  <li>지난 편성이 필요하면 <span class="btnlike">불러오기</span>로 편성표 파일을 엽니다.</li>
+</ol>
+
+<!-- 16 -->
+<h2 id="s16"><span class="no">16</span>자주 묻는 질문</h2>
+<h4>Q. index.html을 더블클릭했는데 글자만 잔뜩 나오거나 메모장이 열려요.</h4>
+<p>A. 다른 프로그램과 연결되어 있는 것입니다. 마우스 오른쪽 버튼 → <span class="btnlike">연결 프로그램</span> → Chrome 또는 Edge를 고르세요. 화면 모양이 깨져 보이면 <code>css</code>, <code>js</code> 폴더가 <code>index.html</code>과 같은 위치에 있는지 확인하세요.</p>
+
+<h4>Q. 어제 입력한 선수 명단이 안 보여요.</h4>
+<p>A. 다음을 확인하세요. ① 전과 같은 브라우저(Chrome/Edge)로 열었는지 ② 시크릿 창이 아닌지 ③ 브라우저 기록을 지우지 않았는지. 그래도 없으면 <span class="btnlike">명단 가져오기</span>로 백업 파일을 불러오거나, 최근 편성표 파일을 <span class="btnlike">불러오기</span> 하면 그 편성에 있던 선수가 명단에 추가됩니다.</p>
+
+<h4>Q. [팀 구성] 버튼이 흐려서 눌리지 않아요.</h4>
+<p>A. 참석 인원이 모자랍니다. 2팀은 10명, 3팀은 15명 이상 체크해야 합니다. 상태 안내의 빨간 문구를 확인하세요. 확정된 상태라면 먼저 <span class="btnlike">수정</span>을 눌러야 합니다.</p>
+
+<h4>Q. [출력]과 [공유] 버튼이 흐려요.</h4>
+<p>A. 팀을 확정한 뒤에 쓸 수 있습니다. <span class="btnlike">팀 확정</span>을 먼저 누르세요.</p>
+
+<h4>Q. 팀을 구성했는데 갑자기 사라졌어요.</h4>
+<p>A. 참석 체크를 바꾸거나, 팀 수를 바꾸거나, 참석 중인 선수를 삭제하면 팀 카드가 지워집니다. <span class="btnlike">팀 구성</span>을 다시 누르세요.</p>
+
+<h4>Q. 평준화로 했는데 팀 총점 차이가 커요.</h4>
+<p>A. 팀 인원이 다르면(예: 6명과 5명) 1인당 평균으로 맞추므로 인원이 많은 팀의 총점이 높은 것이 정상입니다. 인원이 같은데도 차이가 크다면 선수들의 점수 차이가 큰 경우이니 <span class="btnlike">다시 구성</span>을 몇 번 눌러 보거나 직접 선수를 맞바꿔 보세요.</p>
+
+<h4>Q. 이미지 복사가 안 돼요 / 카카오톡에 붙여 넣어지지 않아요.</h4>
+<p>A. 브라우저가 클립보드 접근을 막고 있을 수 있습니다. Chrome이나 Edge 최신 버전을 쓰고, 그래도 안 되면 <span class="btnlike">이미지 저장</span>으로 PNG 파일을 받아 카카오톡에 파일로 보내세요.</p>
+
+<h4>Q. 저장한 파일은 어디에 있나요?</h4>
+<p>A. 브라우저의 다운로드 폴더(보통 <code>C:\Users\사용자이름\Downloads</code>)에 저장됩니다. 브라우저에서 <kbd>Ctrl</kbd>+<kbd>J</kbd>를 누르면 다운로드 목록을 볼 수 있습니다.</p>
+
+<h4>Q. Ctrl+S, Ctrl+P를 눌렀는데 브라우저 저장/인쇄 창이 아니라 다른 동작을 해요.</h4>
+<p>A. 이 프로그램에서는 <kbd>Ctrl</kbd>+<kbd>S</kbd>가 <b>팀 확정</b>, <kbd>Ctrl</kbd>+<kbd>P</kbd>가 <b>PDF 출력</b>으로 바뀌어 있습니다. 정상 동작입니다.</p>
+
+<h4>Q. 날짜 칸이 10/11/2026처럼 영어식으로 보여요.</h4>
+<p>A. 브라우저 언어 설정에 따라 표시 형식이 달라집니다. 날짜 칸 옆의 "2026년 10월 11일 (일)" 표시가 실제 선택된 날짜입니다.</p>
+
+<h4>Q. 휴대폰에서도 쓸 수 있나요?</h4>
+<p>A. 이 버전은 PC용입니다. 휴대폰에서는 파일을 열기 어렵고 끌어서 옮기기(드래그)가 동작하지 않습니다. 결과는 PDF나 공유 이미지로 휴대폰에 보내 보세요.</p>
+
+<h4>Q. 이전 Flutter 웹 버전에서 저장한 편성표도 열리나요?</h4>
+<p>A. 네. 파일 형식이 같아서 <span class="btnlike">불러오기</span>로 열 수 있고, 반대로 이 버전에서 저장한 파일도 Flutter 버전에서 열 수 있습니다.</p>
+
+<h4>Q. 인터넷이 꼭 있어야 하나요? 내 정보가 어딘가로 전송되나요?</h4>
+<p>A. 인터넷이 필요 없고, 어떤 정보도 외부로 전송하지 않습니다. 모든 데이터는 이 PC의 브라우저와 다운로드 폴더에만 저장됩니다.</p>
+
+<!-- 17 -->
+<h2 id="s17"><span class="no">17</span>부록</h2>
+<h3>17-1. 프로그램 파일 목록</h3>
+<table>
+  <tr><th style="width:40%">파일</th><th>내용</th></tr>
+  <tr><td><code>index.html</code></td><td>프로그램 시작 파일 (더블클릭해서 실행)</td></tr>
+  <tr><td><code>manual.html</code></td><td>이 사용자 설명서 (화면용)</td></tr>
+  <tr><td><code>manual/futsal_user_manual.pdf</code></td><td>이 사용자 설명서 (PDF, 인쇄용)</td></tr>
+  <tr><td><code>manual/img/</code></td><td>설명서에 들어간 화면 사진</td></tr>
+  <tr><td><code>css/style.css</code></td><td>화면 디자인</td></tr>
+  <tr><td><code>js/core.js</code></td><td>팀 나누기 규칙과 계산</td></tr>
+  <tr><td><code>js/output.js</code></td><td>PDF와 공유 이미지 만들기</td></tr>
+  <tr><td><code>js/app.js</code></td><td>화면 동작, 저장, 단축키</td></tr>
+  <tr><td><code>README.md</code></td><td>관리자용 간단 안내</td></tr>
+</table>
+
+<h3>17-2. 저장 파일 이름 규칙</h3>
+<table>
+  <tr><th style="width:44%">파일 이름</th><th>만드는 곳</th></tr>
+  <tr><td><code>futsal_teams_YYYY-MM-DD.json</code></td><td>[팀 확정] — 편성표 (불러오기 가능)</td></tr>
+  <tr><td><code>futsal_teams_YYYY-MM-DD.pdf</code></td><td>[출력] — A4 편성표</td></tr>
+  <tr><td><code>futsal_teams_YYYY-MM-DD.png</code></td><td>[공유] → [이미지 저장] — 팀 명단 이미지</td></tr>
+  <tr><td><code>futsal_players_YYYY-MM-DD.json</code></td><td>[명단 내보내기] — 선수 명단 백업</td></tr>
+</table>
+<p>YYYY-MM-DD는 날짜입니다. 편성표 파일은 <b>경기일</b>, 명단 파일은 <b>내보낸 날</b>입니다.</p>
+
+<h3>17-3. 편성 규칙 요약</h3>
+<table>
+  <tr><th style="width:30%">항목</th><th>규칙</th></tr>
+  <tr><td>능력치</td><td>활동량, 스피드, 개인기, 협동력, 컨디션 · 각 1~3 · 새 선수는 모두 2</td></tr>
+  <tr><td>선수 점수</td><td>5개 능력치의 합 (5~15점)</td></tr>
+  <tr><td>팀 수</td><td>2팀 또는 3팀 (A팀, B팀, C팀)</td></tr>
+  <tr><td>팀 인원</td><td>5~7명, 팀끼리 최대 1명 차이</td></tr>
+  <tr><td>최소 인원</td><td>2팀 10명, 3팀 15명</td></tr>
+  <tr><td>교체대기</td><td>팀 수 × 7명을 넘는 인원, 무작위 선정</td></tr>
+  <tr><td>빈 슬롯</td><td>팀마다 처음 2개 (팀 정원 = 처음 인원 + 2)</td></tr>
+  <tr><td>평준화</td><td>점수순 지그재그 배정 후 맞바꾸기로 팀 1인당 평균 총점과 항목별 평균 차이를 최소화</td></tr>
+  <tr><td>전문화</td><td>점수 높은 순으로 A팀부터 채움</td></tr>
+  <tr><td>확정 조건</td><td>모든 팀이 5~7명</td></tr>
+</table>
+
+<h3>17-4. 제작자와 버전 정보</h3>
+<table>
+  <tr><th style="width:30%">제작자</th><td>modoismodo</td></tr>
+</table>
+<table>
+  <tr><th style="width:30%">버전</th><th>날짜</th><th>내용</th></tr>
+  <tr><td>1.0 (최종본)</td><td>2026-10-07</td><td>로컬 PC 버전 첫 배포. HTML/JS로 제작, 서버·DB 없이 실행</td></tr>
+</table>
+
+<p class="foot">풋살 팀 밸런서 사용자 설명서 · 버전 1.0 · 제작자 : modoismodo</p>
+</article>
+</div>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>풋살 팀 밸런서</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231f7a4d'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='white' stroke-width='2.5'/%3E%3Cpath d='M16 11l4 3-1.5 5h-5L12 14z' fill='white'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <h1>
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M16 10l5 3.6-1.9 6h-6.2l-1.9-6z" fill="currentColor"/></svg>
+      풋살 팀 밸런서
+    </h1>
+    <nav class="tabs" role="tablist">
+      <button role="tab" data-tab="match" class="on" title="Alt+1">경기 편성</button>
+      <button role="tab" data-tab="players" title="Alt+2">선수 관리</button>
+      <button role="tab" data-tab="preview" title="Alt+3">PDF 미리보기</button>
+    </nav>
+    <div class="top-links">
+      <a class="ghost manual-link" id="manualLink" href="manual.html" target="_blank" rel="noopener" title="사용자 설명서 (F1)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A2.5 2.5 0 0 1 7.5 2H19v16H7.5a2.5 2.5 0 0 0 0 5H19v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 4.5v16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        사용설명서
+      </a>
+      <button class="ghost" id="helpBtn" title="단축키 (?)">단축키</button>
+    </div>
+  </header>
+
+  <div class="notice" id="storageNotice" hidden>
+    이 브라우저에서는 저장소(localStorage)를 쓸 수 없어 새로고침하면 데이터가 사라집니다. [팀 확정]으로 받은 JSON 파일과 [명단 내보내기] 파일을 보관하세요.
+  </div>
+
+  <main>
+    <!-- 경기 편성 -->
+    <section class="screen on" id="screen-match">
+      <div class="toolbar">
+        <div class="group">
+          <label class="field">경기일
+            <input type="date" id="date" required>
+          </label>
+          <span class="date-label" id="dateLabel"></span>
+          <button class="btn small" id="todayBtn">오늘</button>
+        </div>
+        <div class="seg" id="teamCount" role="group" aria-label="팀 수">
+          <button data-k="2">2팀</button>
+          <button data-k="3">3팀</button>
+        </div>
+        <div class="seg" id="mode" role="group" aria-label="편성 방식">
+          <button data-m="balanced" title="팀끼리 실력이 비슷하게">평준화</button>
+          <button data-m="tiered" title="점수 순으로 A팀부터">전문화</button>
+        </div>
+        <div class="group right">
+          <button class="btn" id="loadBtn" title="Ctrl+O">불러오기</button>
+          <button class="btn primary" id="buildBtn" title="Ctrl+Enter">팀 구성</button>
+          <button class="btn" id="confirmBtn" title="Ctrl+S">팀 확정</button>
+          <button class="btn" id="unlockBtn" hidden>수정</button>
+          <button class="btn" id="printBtn" title="Ctrl+P">출력</button>
+          <button class="btn" id="shareBtn">공유</button>
+        </div>
+      </div>
+
+      <div class="layout">
+        <aside class="card attendance">
+          <div class="att-head">
+            <h2>참석 체크 <span class="muted" id="attCount"></span></h2>
+            <div class="att-actions">
+              <button class="btn small" id="allOn">전체 선택</button>
+              <button class="btn small" id="allOff">전체 해제</button>
+            </div>
+          </div>
+          <input type="search" class="input" id="attSearch" placeholder="이름 검색 ( / )">
+          <div class="att-list" id="attList"></div>
+        </aside>
+
+        <section class="board">
+          <div class="status" id="status"></div>
+          <div class="locked-banner" id="lockedBanner" hidden></div>
+          <div class="teams" id="teams"></div>
+          <p class="callout" id="dragHelp">
+            팀 구성 후 선수를 끌어서 다른 팀의 빈 슬롯이나 교체대기로 옮길 수 있습니다. 다른 선수 위에 놓으면 두 선수를 맞바꿉니다.
+            [팀 확정]을 누르면 편집이 잠기고 JSON 파일로 저장됩니다.
+          </p>
+        </section>
+      </div>
+    </section>
+
+    <!-- 선수 관리 -->
+    <section class="screen" id="screen-players">
+      <div class="toolbar">
+        <h2 class="inline">선수 목록 <span class="muted" id="playerCount"></span></h2>
+        <form class="group" id="addForm" autocomplete="off">
+          <input class="input" id="newName" placeholder="이름 입력" maxlength="20">
+          <button class="btn primary" type="submit">선수 추가</button>
+        </form>
+        <input type="search" class="input" id="playerSearch" placeholder="이름 검색 ( / )">
+        <div class="group right">
+          <button class="btn" id="exportPlayers">명단 내보내기</button>
+          <button class="btn" id="importPlayers">명단 가져오기</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="players">
+          <thead>
+            <tr>
+              <th class="col-no">#</th>
+              <th class="col-name">이름</th>
+              <th>활동량</th><th>스피드</th><th>개인기</th><th>협동력</th><th>컨디션</th>
+              <th>합계</th>
+              <th class="col-act"></th>
+            </tr>
+          </thead>
+          <tbody id="playerRows"></tbody>
+        </table>
+        <p class="empty" id="playersEmpty" hidden>등록된 선수가 없습니다. 위에서 이름을 입력해 선수를 추가하세요.</p>
+      </div>
+      <p class="callout">
+        능력치는 각 항목의 1·2·3을 누르면 바로 바뀌고 자동 저장됩니다. 이름을 더블클릭하거나 [수정]을 눌러 이름을 바꿀 수 있습니다.
+        [명단 내보내기]로 받은 파일을 다른 PC에서 [명단 가져오기] 하면 선수 명단을 옮길 수 있습니다.
+      </p>
+    </section>
+
+    <!-- PDF 미리보기 -->
+    <section class="screen" id="screen-preview">
+      <div class="toolbar">
+        <h2 class="inline">PDF 미리보기</h2>
+        <div class="group right">
+          <button class="btn primary" id="previewPdfBtn">PDF 내려받기</button>
+        </div>
+      </div>
+      <div class="preview" id="preview"></div>
+    </section>
+  </main>
+  <footer class="app-footer">
+    <span class="maker">제작자 : modoismodo</span><br>
+    풋살 팀 밸런서 v1.0 · 로컬 PC 버전 · <a href="manual.html" target="_blank" rel="noopener">사용자 설명서</a> · <a href="manual/futsal_user_manual.pdf" target="_blank" rel="noopener">설명서 PDF</a>
+  </footer>
+</div>
+
+<!-- 공유 창 -->
+<div class="modal" id="shareModal" hidden>
+  <div class="box wide" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+    <div class="box-head">
+      <h2 id="shareTitle">팀 명단 공유</h2>
+      <button class="btn small" data-close>닫기</button>
+    </div>
+    <img id="shareImg" alt="팀 명단 이미지">
+    <div class="group">
+      <button class="btn primary" id="copyImg">이미지 복사</button>
+      <button class="btn" id="saveImg">이미지 저장</button>
+    </div>
+    <p class="hint" id="shareMsg">[이미지 복사] 후 카카오톡 대화창에 Ctrl+V로 붙여 넣으세요.</p>
+  </div>
+</div>
+
+<!-- 알림 창 -->
+<div class="modal" id="dialog" hidden>
+  <div class="box" role="alertdialog" aria-modal="true" aria-labelledby="dialogTitle">
+    <h2 id="dialogTitle"></h2>
+    <div class="dialog-body" id="dialogBody"></div>
+    <div class="group right" id="dialogActions"></div>
+  </div>
+</div>
+
+<!-- 단축키 -->
+<div class="modal" id="helpModal" hidden>
+  <div class="box" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="box-head">
+      <h2 id="helpTitle">키보드 단축키</h2>
+      <button class="btn small" data-close>닫기</button>
+    </div>
+    <table class="keys">
+      <tr><td><kbd>Alt</kbd>+<kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd></td><td>경기 편성 / 선수 관리 / PDF 미리보기</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>팀 구성 / 다시 구성</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>팀 확정 (JSON 저장)</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>불러오기</td></tr>
+      <tr><td><kbd>Ctrl</kbd>+<kbd>P</kbd></td><td>PDF 출력 (확정 후)</td></tr>
+      <tr><td><kbd>[</kbd> / <kbd>]</kbd></td><td>경기일 하루 전 / 하루 뒤</td></tr>
+      <tr><td><kbd>/</kbd></td><td>이름 검색 칸으로 이동</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>창 닫기, 이름 수정 취소</td></tr>
+      <tr><td><kbd>F1</kbd></td><td>사용자 설명서 열기 (새 탭)</td></tr>
+      <tr><td><kbd>?</kbd></td><td>이 도움말</td></tr>
+    </table>
+    <p class="hint">풋살 팀 밸런서 v1.0 · 제작자 : modoismodo</p>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="lineupFile" accept=".json,application/json" hidden>
+<input type="file" id="playersFile" accept=".json,application/json" hidden>
+
+<script src="js/core.js"></script>
+<script src="js/output.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
